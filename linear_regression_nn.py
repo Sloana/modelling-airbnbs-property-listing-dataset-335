@@ -3,27 +3,41 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from sklearn.datasets import load_diabetes
 import torch.nn.functional as F
+from tabular_data import load_airbnd
+from tabular_data import clean_tabular_data
 import yaml
 import joblib
 import json
 import os
 import time
+import pandas as pd
 # from torch.utils.tensorboard import SummaryWriter
+df = pd.read_csv(r"C:/Users/laura/OneDrive/Desktop/Data Science/airbnb-property-listings/tabular_data/listing.csv")
+X, y=load_airbnd(df=clean_tabular_data())
+X= X.apply( pd.to_numeric, errors='coerce' )
+
+X[["guests"]] = X[["guests"]].astype(float)
+X=X.to_numpy()
+y=y.to_numpy()
+
+print(X)
+# X, y=load_airbnd(df=clean_tabular_data())
+# print(X)
 with open('C:/Users/laura/OneDrive/Desktop/Data Science/nn_config.yaml', 'r') as stream:
     data_loaded = yaml.safe_load(stream)
 def get_nn_config():
     return data_loaded['parameters']
 print(get_nn_config())
-class DiabetesDataset():
+class Airbnb():
     def __init__(self):
         super().__init__()
-        self.X,self.y=load_diabetes(return_X_y=True)
+        self.X,self.y=X,y
     def __getitem__(self,idx):
         return(torch.tensor(self.X[idx]).float(), torch.tensor(self.y[idx]).float())
     def __len__(self):
         return(len(self.X))
 
-dataset=DiabetesDataset()
+dataset=Airbnb()
 
 batch_size=4
 train_loader=DataLoader(dataset,shuffle=True, batch_size=batch_size)
@@ -69,7 +83,7 @@ class NN(torch.nn.Module):
         X=self.linear_layer2(X)
         return X
     
-    
+
 def chech_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     x = x.to(device)
@@ -94,7 +108,7 @@ if __name__=='__main__':
 
     folder_name = 'folder' + time.strftime("%Y_%m_%d_%H_%M_%S")
     os.mkdir(folder_name)
-    dataset=DiabetesDataset()
+    dataset=Airbnb()
     train_loader=DataLoader(dataset,shuffle=True,batch_size=8)
     model=NN()
     train(model)
